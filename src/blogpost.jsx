@@ -2,21 +2,80 @@ import { useState, useEffect, useContext, useRef } from "react";
 import { UserContext } from "./UserContext";
 import { Link, useParams } from "react-router-dom";
 import { Header } from "./header";
-import { Textarea, Button } from "@mantine/core";
+import { Textarea, TextInput, Button } from "@mantine/core";
+import { Editor } from '@tinymce/tinymce-react';
 
-const MainPost = ({author, title, content, date_posted}) => {
-    
+const MainPost = ({author, title, content, date_posted, tag}) => {
+
+    const {user} = useContext(UserContext);
+    const [isEdit, setEdit] = useState(false);
+    const [value, setValue] = useState('');
+
+    function EditButton() {
+        setEdit(true);
+    }
+
+    async function DeleteButton() {
+        const deletepostAction = `https://blog-api-backend.fly.dev/blog/${id}/delete`
+        const jwt_token = localStorage.getItem("jwt_token");
+
+        try {
+            await fetch(deletepostAction,
+            {   method: "POST",
+                headers: {
+                Authorization: `Bearer ${jwt_token}`
+                },
+                mode: "cors"});
+                location.reload();
+        }
+        catch(error) {
+            console.error("Error:", error);
+        }
+    }
+
+    function CancelButton() {
+        setEdit(false);
+    }
+
     return (<div className="flex flex-col items-center gap-y-3 mb-10 py-10 bg-blue-100 text-blue-800">
+        {!isEdit ? 
+        <div>
         <h2 className="text-2xl md:text-3xl">{title}</h2>
         <div className="flex gap-x-2.5 md:gap-x-4 text-lg md:text-xl">
             <p>By {author}</p>
             <p>Published {date_posted}</p>
         </div>
-        <p className="text-lg">{content}</p>
-        <div className="flex gap-x-4">
-            <button>Edit</button>
-            <button>Delete</button>
-        </div>
+         <p className="text-lg">{content}</p>
+         </div> : 
+        <form>
+            <TextInput label="Title: "
+            defaultValue={title}
+            ></TextInput>
+            <Editor
+      apiKey='ful941xckaqsyqgyp47o67n6i6w9l1yhj9lkm31l0s3icbyr'
+      init={{
+        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange export formatpainter pageembed linkchecker a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage advtemplate ai mentions tinycomments tableofcontents footnotes mergetags autocorrect typography inlinecss markdown',
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+        tinycomments_mode: 'embedded',
+        tinycomments_author: 'Author name',
+        mergetags_list: [
+          { value: 'First.Name', title: 'First Name' },
+          { value: 'Email', title: 'Email' },
+        ],
+        ai_request: (request, respondWith) => respondWith.string(() => Promise.reject("See docs to implement AI Assistant")),
+      }}
+      initialValue={content}
+    />
+    <TextInput label="Tag: "
+    defaultValue={tag}></TextInput>
+    <div>
+    <Button type="submit">Submit</Button>
+    <Button onClick={CancelButton}>Cancel</Button>
+    </div></form>}
+        {user && !isEdit ? <div className="flex gap-x-4">
+            <button onClick={EditButton}>Edit</button>
+            <button onClick={DeleteButton}>Delete</button>
+        </div> : null}
     </div>)
 }
 
@@ -73,24 +132,32 @@ const CreateComment = ({id}) => {
     </div>)
 }
 
-const Comment = ({username, text, date_posted, liked, ToggleLike}) => {
+const Comment = ({username, text, date_posted, liked, ToggleLike, EditComment, DeleteComment, isEdit, CancelEdit}) => {
 
     const {user} = useContext(UserContext);
-    const commentRef = useRef(null);
 
     return (<div className="items-center text-blue-800 bg-blue-200 w-96 p-4 rounded-md border-2 border-blue-800">
         <div className="flex justify-between gap-x-4">
             <p>{username}</p>
             <p>{date_posted}</p>
         </div>
-        <p>{text}</p> 
+        {!isEdit ? <div><p>{text}</p>
+        <div className="flex gap-x-4">
+                <button onClick={EditComment}>Edit</button>
+                <button onClick={DeleteComment}>Delete</button>
+        </div>
+        </div> : 
+        <form>
+            <Textarea
+            defaultValue={text}></Textarea>
+            <div>
+                <Button type="submit">Submit</Button>
+                <Button onClick={CancelEdit}>Cancel</Button>
+            </div>
+            </form>}
         {!user ? <p className="bg-blue-100 mr-64 rounded-md px-3">{liked.length} likes</p> : 
         <div>
             <button onClick={ToggleLike} className="bg-blue-100 mr-64 rounded-md hover:bg-blue-300 px-3">{liked.length} likes</button>
-            <div className="flex gap-x-4">
-                <button>Edit</button>
-                <button>Delete</button>
-            </div>
             </div>}
     </div>)
 }
@@ -129,7 +196,11 @@ export const BlogPost = () => {
         try {
             const response = await fetch(`https://blog-api-backend.fly.dev/blog/${id}/comments`, {mode:"cors"});
             const data = await response.json();
-            setComments(data);
+            let commentData = data.map((comment) => {
+                comment.isEdit = false;
+                return comment;
+            })
+            setComments(commentData);
         }
         catch(error) {
             setCommentError(error);
@@ -161,6 +232,72 @@ export const BlogPost = () => {
         }
         }
 
+    function EditComment(comment_id) {
+        setComments(comments.filter((comment) => 
+            {
+                if (comment._id === comment_id) {
+                    comment.isEdit = true;
+                }
+                return comment;
+            }))
+    }
+
+    function CancelEdit(comment_id) {
+        setComments(comments.filter((comment) => {
+            if (comment._id === comment_id) {
+                comment.isEdit = false;
+            }
+            return comment;
+        }))
+    }
+
+    async function SubmitEdit(post_id, comment_id) {
+        const deleteEnd = `https://blog-api-backend.fly.dev/blog/${post_id}/comment/${comment_id}/delete`
+        const jwt_token = localStorage.getItem("jwt_token");
+
+        try {
+            await fetch(deleteEnd,
+            {   method: "POST",
+                headers: {
+                    Authorization: `Bearer ${jwt_token}`
+                },
+                mode: "cors"});
+                setComments(comments.filter((comment) => {
+                    if (comment._id !== comment_id) {
+                        return comment;
+                    }
+                }))
+        }
+        catch(error) {
+            console.error("Error:", error);
+        }
+    }
+
+    async function DeleteComment(post_id, comment_id) {
+        const deleteEnd = `https://blog-api-backend.fly.dev/blog/${post_id}/comment/${comment_id}/delete`
+        const jwt_token = localStorage.getItem("jwt_token");
+
+        try {
+            const response = await fetch(deleteEnd,
+            {   method: "POST",
+                headers: {
+                    Authorization: `Bearer ${jwt_token}`
+                },
+                mode: "cors"});
+            const result = await response.json();
+            if (result) {
+             setComments(comments.filter((comment) => {
+                if (comment._id !== comment_id) {
+                    return comment;
+                }
+            }))
+        }
+        }
+        catch(error) {
+            console.error("Error:", error);
+        }
+    }
+
     const commentSection = comments.map((comment) => {
     return <div key={comment._id}>
             <Comment
@@ -169,6 +306,10 @@ export const BlogPost = () => {
             date_posted={comment.date_posted_formatted}
             liked={comment.liked}
             ToggleLike={() => ToggleLike(comment.blog_post, comment._id)}
+            isEdit={comment.isEdit}
+            EditComment={() => EditComment(comment._id)}
+            CancelEdit={() => CancelEdit(comment._id)}
+            DeleteComment={() => DeleteComment(comment.blog_post, comment._id)}
             ></Comment>
         </div>
     });
@@ -181,7 +322,8 @@ export const BlogPost = () => {
         author={post.author.username}
         title={post.title}
         content={post.content}
-        date_posted={post.date_posted_formatted}></MainPost>}
+        date_posted={post.date_posted_formatted}
+        tag={post.tag}></MainPost>}
         <CreateComment id={post._id}></CreateComment>
         {CommentError ? <div><p className="text-center text-blue-800">Error loading comments</p></div> :
         CommentLoading ? <div><p className="text-center text-blue-800">Comments section loading...</p></div> :
