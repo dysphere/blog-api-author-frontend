@@ -1,28 +1,31 @@
 import { Header } from "./header"
-import { Link } from "react-router-dom";
-import { useRef } from 'react';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Editor } from '@tinymce/tinymce-react';
-import { TextInput, Textarea, Checkbox, Button } from '@mantine/core';
+import { TextInput, Checkbox, Button } from '@mantine/core';
 
 const NewPostForm = () => {
     const newpostAction = `https://blog-api-backend.fly.dev/blog/create-post`
+    const [value, setValue] = useState("");
+    const [text, setText] = useState("");
 
-    const editorRef = useRef(null);
-  const log = () => {
-    if (editorRef.current) {
-      console.log(editorRef.current.getContent());
-    }
-  };
+    const navigate = useNavigate();
+
+    const onEditorInputChange = (newValue, editor) => {
+      setValue(newValue);
+      setText(editor.getContent());
+}
 
     async function SubmitNewPost(e) {
         e.preventDefault();
         const form = e.target;
         const data = new FormData(form);
+        data.set('content', text);
         const dataEntries = Object.fromEntries(data.entries());
         const dataJson = JSON.stringify(dataEntries);
         const jwt_token = localStorage.getItem("jwt_token");
         try {
-            await fetch(newpostAction,
+            let response = await fetch(newpostAction,
             {   method: "POST",
                 headers: {
                 "Content-Type": "application/json",
@@ -30,11 +33,12 @@ const NewPostForm = () => {
                 },
                 body: dataJson,
                 mode: "cors"});
-                location.reload();
+                await response.json();
         }
         catch(error) {
             console.error("Error:", error);
         }
+        navigate("/blog")
     }
 
     return (<div className="bg-blue-200">
@@ -46,30 +50,21 @@ const NewPostForm = () => {
             name="title"></TextInput>
             <Editor
             label="Content: "
-            name="content"
+            textareaName="content"
             apiKey='ful941xckaqsyqgyp47o67n6i6w9l1yhj9lkm31l0s3icbyr'
-            onInit={(_evt, editor) => editorRef.current = editor}
-        init={{
-          height: 500,
-          menubar: false,
-          plugins: [
-            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-          ],
-          toolbar: 'undo redo | blocks | ' +
-            'bold italic forecolor | alignleft aligncenter ' +
-            'alignright alignjustify | bullist numlist outdent indent | ' +
-            'removeformat | help',
-          content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-        }}></Editor>
+            onEditorChange={(newValue, editor) => onEditorInputChange(newValue, editor)}
+            onInit={(evt, editor) => setText(editor.getContent())}
+            init={{
+              allow_html_in_named_anchor: true,
+            }}
+            ></Editor>
             <TextInput
             label="Tag: "
             name="tag"></TextInput>
             <Checkbox
             label="Publish "
             name="published"></Checkbox>
-            <Button type="submit"><Link to="/blog">Post</Link></Button>
+            <Button type="submit">Post</Button>
             </div>
         </form>
     </div>)

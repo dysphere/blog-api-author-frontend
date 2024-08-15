@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Header } from "./header";
 
-const truncateString = (string) => {
-    return string.slice(0, 60) + "..."
-}
+function unescapeHtmlEntities(html) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return doc.documentElement.textContent.slice(0, 60) + "...";
+  }
 
 const BlogCard = ({title, author, id, date_posted, content}) => {
     return (
@@ -14,7 +15,9 @@ const BlogCard = ({title, author, id, date_posted, content}) => {
         <p>{date_posted}</p>
         <p>{author}</p>
         </div>
-        <p>{truncateString(content)}</p>
+        <div
+      dangerouslySetInnerHTML={{__html: unescapeHtmlEntities(content)}}
+    />
     </div></Link>)
 }
 

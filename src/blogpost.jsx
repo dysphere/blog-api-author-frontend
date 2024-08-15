@@ -1,15 +1,19 @@
 import { useState, useEffect, useContext, useRef } from "react";
 import { UserContext } from "./UserContext";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ReactDOMServer, renderToString } from "react-dom/server";
 import { Header } from "./header";
-import { Textarea, TextInput, Button } from "@mantine/core";
+import { Textarea, TextInput, Button, Checkbox } from "@mantine/core";
 import { Editor } from '@tinymce/tinymce-react';
 
-const MainPost = ({author, title, content, date_posted, tag}) => {
+const MainPost = ({author, title, content, date_posted, tag, published, id}) => {
 
     const {user} = useContext(UserContext);
     const [isEdit, setEdit] = useState(false);
     const [value, setValue] = useState('');
+    const navigate = useNavigate();
+
+    const EditPostEnd = `https://blog-api-backend.fly.dev/blog/${id}/update`
 
     function EditButton() {
         setEdit(true);
@@ -26,16 +30,45 @@ const MainPost = ({author, title, content, date_posted, tag}) => {
                 Authorization: `Bearer ${jwt_token}`
                 },
                 mode: "cors"});
-                location.reload();
+                
         }
         catch(error) {
             console.error("Error:", error);
         }
+        navigate("/blog");
+    }
+
+    async function SubmitEdit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const data = new FormData(form);
+        const dataEntries = Object.fromEntries(data.entries());
+        const dataJson = JSON.stringify(dataEntries);
+        const jwt_token = localStorage.getItem("jwt_token");
+        try {
+            await fetch(EditPostEnd,
+            {   method: "POST",
+                headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${jwt_token}`
+                },
+                body: dataJson,
+                mode: "cors"});
+        }
+        catch(error) {
+            console.error("Error:", error);
+        }
+        location.reload();
     }
 
     function CancelButton() {
         setEdit(false);
     }
+
+    function unescapeHtmlEntities(html) {
+        const doc = new DOMParser().parseFromString(content, "text/html");
+        return doc.documentElement.textContent;
+      }
 
     return (<div className="flex flex-col items-center gap-y-3 mb-10 py-10 bg-blue-100 text-blue-800">
         {!isEdit ? 
@@ -45,29 +78,28 @@ const MainPost = ({author, title, content, date_posted, tag}) => {
             <p>By {author}</p>
             <p>Published {date_posted}</p>
         </div>
-         <p className="text-lg">{content}</p>
+        <div
+      dangerouslySetInnerHTML={{__html: unescapeHtmlEntities(content)}}
+    />
          </div> : 
-        <form>
+        <form action={EditPostEnd} method="POST" onSubmit={SubmitEdit}>
             <TextInput label="Title: "
             defaultValue={title}
             ></TextInput>
             <Editor
       apiKey='ful941xckaqsyqgyp47o67n6i6w9l1yhj9lkm31l0s3icbyr'
-      init={{
-        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange export formatpainter pageembed linkchecker a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage advtemplate ai mentions tinycomments tableofcontents footnotes mergetags autocorrect typography inlinecss markdown',
-        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
-        tinycomments_mode: 'embedded',
-        tinycomments_author: 'Author name',
-        mergetags_list: [
-          { value: 'First.Name', title: 'First Name' },
-          { value: 'Email', title: 'Email' },
-        ],
-        ai_request: (request, respondWith) => respondWith.string(() => Promise.reject("See docs to implement AI Assistant")),
-      }}
+      textareaName="content"
       initialValue={content}
+      init={{
+        allow_html_in_named_anchor: true,
+      }}
     />
     <TextInput label="Tag: "
     defaultValue={tag}></TextInput>
+     <Checkbox
+            label="Publish "
+            name="published"
+            defaultChecked={published}></Checkbox>
     <div>
     <Button type="submit">Submit</Button>
     <Button onClick={CancelButton}>Cancel</Button>
@@ -132,9 +164,10 @@ const CreateComment = ({id}) => {
     </div>)
 }
 
-const Comment = ({username, text, date_posted, liked, ToggleLike, EditComment, DeleteComment, isEdit, CancelEdit}) => {
+const Comment = ({username, text, date_posted, liked, ToggleLike, EditComment, DeleteComment, isEdit, CancelEdit, post_id, comment_id, SubmitCommentEdit}) => {
 
     const {user} = useContext(UserContext);
+    const commentEditAction = `https://blog-api-backend.fly.dev/blog/${post_id}/comment/${comment_id}/edit`
 
     return (<div className="items-center text-blue-800 bg-blue-200 w-96 p-4 rounded-md border-2 border-blue-800">
         <div className="flex justify-between gap-x-4">
@@ -147,7 +180,7 @@ const Comment = ({username, text, date_posted, liked, ToggleLike, EditComment, D
                 <button onClick={DeleteComment}>Delete</button>
         </div>
         </div> : 
-        <form>
+        <form action={commentEditAction} method="POST" onSubmit={SubmitCommentEdit}>
             <Textarea
             defaultValue={text}></Textarea>
             <div>
@@ -252,21 +285,16 @@ export const BlogPost = () => {
     }
 
     async function SubmitEdit(post_id, comment_id) {
-        const deleteEnd = `https://blog-api-backend.fly.dev/blog/${post_id}/comment/${comment_id}/delete`
+        const updateEnd = `https://blog-api-backend.fly.dev/blog/${post_id}/comment/${comment_id}/edit`
         const jwt_token = localStorage.getItem("jwt_token");
 
         try {
-            await fetch(deleteEnd,
+            await fetch(updateEnd,
             {   method: "POST",
                 headers: {
                     Authorization: `Bearer ${jwt_token}`
                 },
                 mode: "cors"});
-                setComments(comments.filter((comment) => {
-                    if (comment._id !== comment_id) {
-                        return comment;
-                    }
-                }))
         }
         catch(error) {
             console.error("Error:", error);
@@ -310,6 +338,9 @@ export const BlogPost = () => {
             EditComment={() => EditComment(comment._id)}
             CancelEdit={() => CancelEdit(comment._id)}
             DeleteComment={() => DeleteComment(comment.blog_post, comment._id)}
+            SubmitCommentEdit={() => SubmitEdit(comment.blog_post._id, comment._id)}
+            comment_id={comment._id}
+            post_id={comment.blog_post._id}
             ></Comment>
         </div>
     });
@@ -321,9 +352,11 @@ export const BlogPost = () => {
         <MainPost
         author={post.author.username}
         title={post.title}
+        published={post.published}
         content={post.content}
         date_posted={post.date_posted_formatted}
-        tag={post.tag}></MainPost>}
+        tag={post.tag}
+        id={post._id}></MainPost>}
         <CreateComment id={post._id}></CreateComment>
         {CommentError ? <div><p className="text-center text-blue-800">Error loading comments</p></div> :
         CommentLoading ? <div><p className="text-center text-blue-800">Comments section loading...</p></div> :
