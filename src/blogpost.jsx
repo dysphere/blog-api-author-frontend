@@ -11,6 +11,7 @@ const MainPost = ({author, title, content, date_posted, tag, published, id}) => 
     const {user} = useContext(UserContext);
     const [isEdit, setEdit] = useState(false);
     const [value, setValue] = useState('');
+    const [text, setText] = useState(unescapeHtmlEntities(content));
     const navigate = useNavigate();
 
     const EditPostEnd = `https://blog-api-backend.fly.dev/blog/${id}/update`
@@ -38,10 +39,16 @@ const MainPost = ({author, title, content, date_posted, tag, published, id}) => 
         navigate("/blog");
     }
 
+    const onEditorInputChange = (newValue, editor) => {
+        setValue(newValue);
+        setText(editor.getContent());
+  }
+
     async function SubmitEdit(e) {
         e.preventDefault();
         const form = e.target;
         const data = new FormData(form);
+        data.set('content', text);
         const dataEntries = Object.fromEntries(data.entries());
         const dataJson = JSON.stringify(dataEntries);
         const jwt_token = localStorage.getItem("jwt_token");
@@ -85,17 +92,21 @@ const MainPost = ({author, title, content, date_posted, tag, published, id}) => 
         <form action={EditPostEnd} method="POST" onSubmit={SubmitEdit}>
             <TextInput label="Title: "
             defaultValue={title}
+            name="title"
             ></TextInput>
             <Editor
       apiKey='ful941xckaqsyqgyp47o67n6i6w9l1yhj9lkm31l0s3icbyr'
       textareaName="content"
-      initialValue={content}
+      initialValue={unescapeHtmlEntities(content)}
+      onEditorChange={(newValue, editor) => onEditorInputChange(newValue, editor)}
+    onInit={(evt, editor) => setText(editor.getContent())}
       init={{
         allow_html_in_named_anchor: true,
       }}
     />
     <TextInput label="Tag: "
-    defaultValue={tag}></TextInput>
+    defaultValue={tag}
+    name="tag"></TextInput>
      <Checkbox
             label="Publish "
             name="published"
@@ -174,12 +185,13 @@ const Comment = ({username, text, date_posted, liked, ToggleLike, EditComment, D
             <p>{username}</p>
             <p>{date_posted}</p>
         </div>
-        {!isEdit ? <div><p>{text}</p>
+        {!user ? <div><p>{text}</p></div> :
+        !isEdit ? <div><p>{text}</p>
         <div className="flex gap-x-4">
                 <button onClick={EditComment}>Edit</button>
                 <button onClick={DeleteComment}>Delete</button>
         </div>
-        </div> : 
+        </div> :
         <form action={commentEditAction} method="POST" onSubmit={SubmitCommentEdit}>
             <Textarea
             defaultValue={text}></Textarea>
