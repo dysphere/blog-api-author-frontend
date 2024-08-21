@@ -80,13 +80,14 @@ const MainPost = ({author, title, content, date_posted, tag, published, id}) => 
     return (<div className="flex flex-col items-center gap-y-3 mb-10 py-10 bg-blue-100 text-blue-800">
         {!isEdit ? 
         <div>
-        <h2 className="text-2xl md:text-3xl">{title}</h2>
-        <div className="flex gap-x-2.5 md:gap-x-4 text-lg md:text-xl">
+        <h2 className="text-2xl md:text-3xl text-center">{title}</h2>
+        <div className="flex text-lg md:text-xl justify-center gap-x-2.5 md:gap-x-4">
             <p>By {author}</p>
             <p>Published {date_posted}</p>
         </div>
         <div
       dangerouslySetInnerHTML={{__html: unescapeHtmlEntities(content)}}
+      className="mx-10 md:mx-96"
     />
          </div> : 
         <form action={EditPostEnd} method="POST" onSubmit={SubmitEdit}>
@@ -116,8 +117,8 @@ const MainPost = ({author, title, content, date_posted, tag, published, id}) => 
     <Button onClick={CancelButton}>Cancel</Button>
     </div></form>}
         {user && !isEdit ? <div className="flex gap-x-4">
-            <button onClick={EditButton}>Edit</button>
-            <button onClick={DeleteButton}>Delete</button>
+            <button className="bg-blue-800 text-white px-5 rounded-full" onClick={EditButton}>Edit</button>
+            <button className="bg-blue-800 text-white px-5 rounded-full" onClick={DeleteButton}>Delete</button>
         </div> : null}
     </div>)
 }
