@@ -1,7 +1,6 @@
 import { useState, useEffect, useContext, useRef } from "react";
 import { UserContext } from "./UserContext";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ReactDOMServer, renderToString } from "react-dom/server";
 import { Header } from "./header";
 import { Textarea, TextInput, Button, Checkbox } from "@mantine/core";
 import { Editor } from '@tinymce/tinymce-react';
@@ -186,8 +185,8 @@ const Comment = ({username, text, date_posted, liked, ToggleLike, EditComment, D
             <p>{username}</p>
             <p>{date_posted}</p>
         </div>
-        {!user ? <div><p>{text}</p></div> :
-        !isEdit ? <div><p>{text}</p>
+        {!user ? <div><p className="py-2">{text}</p></div> :
+        !isEdit ? <div><p className="py-2">{text}</p>
         <div className="flex gap-x-4">
                 <button onClick={EditComment}>Edit</button>
                 <button onClick={DeleteComment}>Delete</button>
@@ -195,15 +194,16 @@ const Comment = ({username, text, date_posted, liked, ToggleLike, EditComment, D
         </div> :
         <form action={commentEditAction} method="POST" onSubmit={SubmitCommentEdit}>
             <Textarea
-            defaultValue={text}></Textarea>
+            defaultValue={text}
+            name="text"></Textarea>
             <div>
                 <Button type="submit">Submit</Button>
                 <Button onClick={CancelEdit}>Cancel</Button>
             </div>
             </form>}
-        {!user ? <p className="bg-blue-100 mr-64 rounded-md px-3">{liked.length} likes</p> : 
+        {!user ? <p className="bg-blue-100 mr-64 rounded-md px-3 py-0">{liked.length} likes</p> : 
         <div>
-            <button onClick={ToggleLike} className="bg-blue-100 mr-64 rounded-md hover:bg-blue-300 px-3">{liked.length} likes</button>
+            <button onClick={ToggleLike} className="bg-blue-100 mr-64 rounded-md hover:bg-blue-300 px-3 py-0">{liked.length} likes</button>
             </div>}
     </div>)
 }
@@ -297,21 +297,31 @@ export const BlogPost = () => {
         }))
     }
 
-    async function SubmitEdit(post_id, comment_id) {
-        const updateEnd = `https://blog-api-backend.fly.dev/blog/${post_id}/comment/${comment_id}/edit`
+    function SubmitCommentEdit(e, post_id, comment_id) {
+        e.preventDefault();
+        const form = e.target;
+        const data = new FormData(form);
+        const dataEntries = Object.fromEntries(data.entries());
+        const dataJson = JSON.stringify(dataEntries);
         const jwt_token = localStorage.getItem("jwt_token");
 
+        const CommentEdit = async (post_id, comment_id) => {
+        const commentEditAction = `https://blog-api-backend.fly.dev/blog/${post_id}/comment/${comment_id}/edit`
         try {
-            await fetch(updateEnd,
+            await fetch(commentEditAction,
             {   method: "POST",
                 headers: {
+                    "Content-Type": "application/json",
                     Authorization: `Bearer ${jwt_token}`
                 },
+                body: dataJson,
                 mode: "cors"});
         }
         catch(error) {
             console.error("Error:", error);
         }
+    }
+    CommentEdit(post_id, comment_id);
     }
 
     async function DeleteComment(post_id, comment_id) {
@@ -350,8 +360,8 @@ export const BlogPost = () => {
             isEdit={comment.isEdit}
             EditComment={() => EditComment(comment._id)}
             CancelEdit={() => CancelEdit(comment._id)}
-            DeleteComment={() => DeleteComment(comment.blog_post, comment._id)}
-            SubmitCommentEdit={() => SubmitEdit(comment.blog_post._id, comment._id)}
+            DeleteComment={() => DeleteComment(comment.blog_post._id, comment._id)}
+            SubmitCommentEdit={(e) => SubmitCommentEdit(e, comment.blog_post._id, comment._id)}
             comment_id={comment._id}
             post_id={comment.blog_post._id}
             ></Comment>
