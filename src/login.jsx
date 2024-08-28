@@ -19,7 +19,7 @@ const LoginForm = () => {
         navigate("/blog");
     }
 
-    return (<div className="text-blue-800 bg-blue-100 md:mx-[44rem]">
+    return (<div className="text-blue-800 bg-blue-100 md:mx-[44rem] mt-24">
         <h2 className="text-center text-3xl mt-10 pt-5">Author Log In</h2>
         <form action="https://blog-api-backend.fly.dev/blog/author-log-in" method="POST" onSubmit={LoginSubmit}>
             <div className="flex flex-col items-center gap-y-2 py-5">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from "react";
+import { useState, useEffect, useContext } from "react";
 import { UserContext } from "./UserContext";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Header } from "./header";
@@ -76,7 +76,7 @@ const MainPost = ({author, title, content, date_posted, tag, published, id}) => 
         return doc.documentElement.textContent;
       }
 
-    return (<div className="flex flex-col items-center gap-y-3 mb-10 py-10 bg-blue-100 text-blue-800">
+    return (<div className="flex flex-col items-center gap-y-3 mb-10 py-10 bg-blue-100 text-blue-800 mt-28">
         {!isEdit ? 
         <div>
         <h2 className="text-2xl md:text-3xl text-center">{title}</h2>
@@ -188,8 +188,8 @@ const Comment = ({username, text, date_posted, liked, ToggleLike, EditComment, D
         {!user ? <div><p className="py-2">{text}</p></div> :
         !isEdit ? <div><p className="py-2">{text}</p>
         <div className="flex gap-x-4">
-                <button onClick={EditComment}>Edit</button>
-                <button onClick={DeleteComment}>Delete</button>
+                <button className="bg-blue-800 text-white px-5 rounded-full" onClick={EditComment}>Edit</button>
+                <button className="bg-blue-800 text-white px-5 rounded-full" onClick={DeleteComment}>Delete</button>
         </div>
         </div> :
         <form action={commentEditAction} method="POST" onSubmit={SubmitCommentEdit}>
@@ -203,7 +203,7 @@ const Comment = ({username, text, date_posted, liked, ToggleLike, EditComment, D
             </form>}
         {!user ? <p className="bg-blue-100 mr-64 rounded-md px-3 py-0">{liked.length} likes</p> : 
         <div>
-            <button onClick={ToggleLike} className="bg-blue-100 mr-64 rounded-md hover:bg-blue-300 px-3 py-0">{liked.length} likes</button>
+            <button onClick={ToggleLike} className="bg-blue-100 mr-64 rounded-md hover:bg-blue-300 px-3 py-0 mt-2">{liked.length} likes</button>
             </div>}
     </div>)
 }
@@ -370,8 +370,8 @@ export const BlogPost = () => {
 
     return (<div>
         <Header></Header>
-        {PostError ? <div><p className="text-center text-blue-800">A network error was encountered</p></div> : 
-        PostLoading ? <div><p className="text-center text-blue-800">Post loading...</p></div> : 
+        {PostError ? <div><p className="text-center text-blue-800 mt-28">A network error was encountered</p></div> : 
+        PostLoading ? <div><p className="text-center text-blue-800 mt-28">Post loading...</p></div> : 
         <MainPost
         author={post.author.username}
         title={post.title}

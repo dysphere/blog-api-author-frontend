@@ -29,15 +29,15 @@ export const Header = () => {
     }
 
     return (<header>
-        <Container fluid className="flex flex-row justify-between py-4 bg-blue-200 text-white pb-3">
+        <Container fluid className="flex flex-row justify-between py-4 bg-blue-200 text-white pb-3 fixed top-0 left-0 right-0">
             <div className="text-blue-800 font-bold text-2xl">
                 <Link to="/blog">Home</Link>
             </div>
             {user ? <div className="flex flex-row justify-evenly gap-x-4 md:gap-x-10 md:pr-10">
                 <Link to="/blog">
-                <button className="px-4 md:px-10 py-1 rounded-full bg-blue-800">Posts</button></Link>
-                <Link to="/new"><button className="px-4 md:px-10 py-1 rounded-full bg-blue-800">New Post</button></Link>
-                <button type="button" className="px-4 md:px-10 py-1 rounded-full bg-blue-800" onClick={userLogout}>Log Out</button>
+                <button className="px-4 md:px-10 py-2.5 rounded-full bg-blue-800">Posts</button></Link>
+                <Link to="/new"><button className="px-4 md:px-10 rounded-full bg-blue-800 text-sm md:text-base py-2.5">New Post</button></Link>
+                <button type="button" className="px-4 md:px-10 py-1 rounded-full bg-blue-800 text-sm md:text-base" onClick={userLogout}>Log Out</button>
                 </div>  :        
                 <div className="flex flex-row justify-evenly gap-x-4 md:gap-x-10 md:pr-10 pb-1">{items}</div>}
         </Container>
