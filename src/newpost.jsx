@@ -41,7 +41,7 @@ const NewPostForm = () => {
         navigate("/blog")
     }
 
-    return (<div className="bg-blue-200 mt-24">
+    return (<div className="bg-blue-200 mt-24 mx-auto">
         <div className="text-center text-3xl text-blue-800 pt-4">Create a New Post</div>
         <form action={newpostAction} method="POST" onSubmit={SubmitNewPost}>
             <div className="flex flex-col items-center gap-y-2">
