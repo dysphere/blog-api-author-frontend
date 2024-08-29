@@ -180,7 +180,7 @@ const Comment = ({username, text, date_posted, liked, ToggleLike, EditComment, D
     const {user} = useContext(UserContext);
     const commentEditAction = `https://blog-api-backend.fly.dev/blog/${post_id}/comment/${comment_id}/edit`
 
-    return (<div className="items-center text-blue-800 bg-blue-200 w-96 p-4 rounded-md border-2 border-blue-800">
+    return (<div className="items-center text-blue-800 bg-blue-200 w-96 p-4 rounded-md border-2 border-blue-800 mb-2 mt-0">
         <div className="flex justify-between gap-x-4">
             <p>{username}</p>
             <p>{date_posted}</p>
@@ -384,6 +384,6 @@ export const BlogPost = () => {
         {CommentError ? <div><p className="text-center text-blue-800">Error loading comments</p></div> :
         CommentLoading ? <div><p className="text-center text-blue-800">Comments section loading...</p></div> :
         comments.length === 0 ? <div><p className="text-center text-blue-800">There are currently no comments</p></div> :
-        <div className="flex flex-col items-center gap-y-4 mt-6">{commentSection}</div>}
+        <div className="flex flex-col items-center gap-y-4 my-6">{commentSection}</div>}
     </div>)
 }
