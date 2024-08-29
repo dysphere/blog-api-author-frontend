@@ -9,7 +9,7 @@ function unescapeHtmlEntities(html) {
 
 const BlogCard = ({title, author, id, date_posted, content}) => {
     return (
-    <Link to={`${id}`}><div className="flex flex-col gap-y-2.5 bg-blue-200 hover:bg-blue-300 text-blue-800 border-l-4 border-blue-800 py-6 pl-4 pr-12 w-[30rem]">
+    <Link to={`${id}`}><div className="flex flex-col gap-y-2.5 bg-blue-200 hover:bg-blue-300 text-blue-800 border-l-4 border-blue-800 py-6 pl-4 pr-12 w-screen md:w-[30rem]">
         <h2 className="text-center">{title}</h2>
         <div className="flex gap-x-4">
         <p>{date_posted}</p>
